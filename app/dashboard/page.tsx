@@ -15,6 +15,7 @@ import GoalProgress from "@/components/Dashboard/GoalProgress";
 import SplitBar from "@/components/Dashboard/SplitBar";
 import StatCard from "@/components/Dashboard/StatCard";
 import TransactionHistoryItem, { Transaction } from "@/components/Dashboard/TransactionHistoryItem";
+import MoneyDistributionWidget from "@/components/Dashboard/MoneyDistributionWidget";
 
 const recentTransactions: Transaction[] = [
   {
@@ -191,6 +192,9 @@ export default function Dashboard() {
         <div className="mb-8">
           <CurrentMoneySplitWidget />
         </div>
+        <div className="mb-8">
+          <MoneyDistributionWidget />
+        </div>
 
         {/* Recent Transactions */}
         <div
@@ -296,4 +300,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

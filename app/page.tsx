@@ -103,7 +103,7 @@ export default function Home() {
 
         {/* Dark Feature Cards */}
         <FeatureSection />
-        
+
         {/* Why Choose Stellar Section */}
         <WhyChooseStellar />
 
@@ -137,16 +137,16 @@ export default function Home() {
             >
               <div className="font-semibold text-lg mb-2">View Dashboard</div>
               <div className="text-purple-100 text-sm">
-                See financial insights and transaction history
+                See your new Money Split widget and financial insights
               </div>
             </Link>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* FAQ Section */}
-      <FAQSection />
-    </main>
+      < FAQSection />
+    </main >
   );
 }
 

@@ -8,6 +8,7 @@ import {
   File,
   FileTextIcon,
 } from "lucide-react";
+import CurrentMoneySplitWidget from '@/components/CurrentMoneySplitWidget'
 import GoalProgress from "@/components/Dashboard/GoalProgress";
 import SplitBar from "@/components/Dashboard/SplitBar";
 import StatCard from "@/components/Dashboard/StatCard";
@@ -67,47 +68,9 @@ export default function Dashboard() {
         </div>
 
         {/* Money Split Visualization */}
-        <div
-          className="rounded-xl shadow-md p-6 mb-8"
-          style={{ backgroundImage: "var(--card)" }}
-        >
-          <h2 className="text-xl font-bold text-(--foreground) mb-4">
-            Current Money Split
-          </h2>
-          <div className="space-y-4">
-            <SplitBar
-              label="Daily Spending"
-              amount={150}
-              percentage={50}
-              color="bg-blue-500"
-            />
-            <SplitBar
-              label="Savings"
-              amount={90}
-              percentage={30}
-              color="bg-green-500"
-            />
-            <SplitBar
-              label="Bills"
-              amount={45}
-              percentage={15}
-              color="bg-yellow-500"
-            />
-            <SplitBar
-              label="Insurance"
-              amount={15}
-              percentage={5}
-              color="bg-purple-500"
-            />
-          </div>
-          <div className="mt-6">
-            <Link
-              href="/split"
-              className="text-blue-600 hover:text-blue-700 font-semibold"
-            >
-              Configure Split Settings →
-            </Link>
-          </div>
+        {/* Money Split Visualization */}
+        <div className="mb-8">
+          <CurrentMoneySplitWidget />
         </div>
 
         {/* Recent Transactions */}
@@ -229,3 +192,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

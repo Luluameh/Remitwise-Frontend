@@ -36,34 +36,38 @@ export default function Dashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
             title="Total Sent"
             value="$1,200"
-            change="+$300 this month"
-            icon={<DollarSign className="w-6 h-6" />}
-            trend="up"
+            detail1="+$300"
+            detail1Color="text-red-500"
+            detail2="+25%"
+            icon={Send}
+            showTrend={true}
           />
           <StatCard
             title="Savings"
             value="$360"
-            change="+$90 this month"
-            icon={<PiggyBank className="w-6 h-6" />}
-            trend="up"
+            detail1="+$90"
+            detail1Color="text-red-500"
+            detail2="+33%"
+            icon={PiggyBank}
+            showTrend={true}
           />
           <StatCard
             title="Bills Paid"
             value="$180"
-            change="3 bills this month"
-            icon={<TrendingUp className="w-6 h-6" />}
-            trend="neutral"
+            detail1="3 bills"
+            detail2="This month"
+            icon={FileText}
           />
           <StatCard
             title="Insurance"
             value="$60"
-            change="2 active policies"
-            icon={<TrendingDown className="w-6 h-6" />}
-            trend="neutral"
+            detail1="2 policies"
+            detail2="Active"
+            icon={Shield}
           />
         </div>
 

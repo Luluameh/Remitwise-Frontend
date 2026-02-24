@@ -52,19 +52,24 @@ npm run build
 npm start
 ```
 
+### Authentication & Signature Verification
+
+RemitWise implements a nonce-based challenge-response authentication mechanism to verify genuine wallet ownership over the Stellar network.
+
+**Message Format and Verification Steps:**
+1. **Request Nonce:** The frontend calls `GET /api/auth/nonce?address=<STELLAR_PUBLIC_KEY>` to receive a securely generated random 32-byte hex string (nonce). This nonce is temporarily cached on the server.
+2. **Sign Nonce:** The client wallet (e.g., Freighter) is prompted to sign the raw nonce. The message to be signed is the byte representation of the hex nonce.
+3. **Submit Signature:** The client submits `{"address": "...", "signature": "..."}` to `POST /api/auth/login`. The signature should be base64-encoded.
+4. **Verification:** The backend converts the nonce to a Buffer and verifies the base64 signature against the supplied public address using `@stellar/stellar-sdk` (`Keypair.fromPublicKey(address).verify(nonceBuffer, signatureBuffer)`). Invalid signatures or missing/expired nonces will receive a `401 Unauthorized`.
+
 ### End-to-End Testing
 
 To run the Playwright end-to-end tests for authentication and protected routes:
 
 ```bash
-# Set required test environment variables
-export TEST_WALLET_ADDRESS="GDEMOXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-export TEST_SIGNATURE="mock-signature"
-
 # Run tests
 npm run test:e2e
 ```
-
 
 ## Project Structure
 

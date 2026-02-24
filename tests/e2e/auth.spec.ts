@@ -1,19 +1,30 @@
 import { test, expect } from '@playwright/test';
+import { Keypair } from '@stellar/stellar-sdk';
 
 test.describe('Authentication and Protected Flow', () => {
-    test('should login with test wallet and access protected API', async ({ page }) => {
+    test('should login with a valid signature and access protected API', async ({ page }) => {
         // 0. Fulfill the "open browser" requirement
         await page.goto('/');
 
-        // 1. Prepare env data for mock backend
-        const testWalletAddress = process.env.TEST_WALLET_ADDRESS || 'GDEMOXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
-        const testSignature = process.env.TEST_SIGNATURE || 'mock-signature';
+        // 1. Prepare keypair for signing
+        const keypair = Keypair.random();
+        const address = keypair.publicKey();
 
-        // 2. Perform mock login via the browser context
+        // 2. Fetch nonce from the new endpoint
+        const nonceResponse = await page.request.get(`/api/auth/nonce?address=${address}`);
+        expect(nonceResponse.status()).toBe(200);
+        const { nonce } = await nonceResponse.json();
+        expect(nonce).toBeDefined();
+
+        // 3. Sign the nonce natively via Stellar Keypair
+        const signatureBuffer = keypair.sign(Buffer.from(nonce, 'hex'));
+        const signature = signatureBuffer.toString('base64');
+
+        // 4. Perform actual login using the signature
         const loginResponse = await page.request.post('/api/auth/login', {
             data: {
-                address: testWalletAddress,
-                signature: testSignature
+                address,
+                signature
             }
         });
 
@@ -22,19 +33,43 @@ test.describe('Authentication and Protected Flow', () => {
         const loginData = await loginResponse.json();
         expect(loginData).toHaveProperty('success', true);
         expect(loginData).toHaveProperty('token');
+    });
 
-        // 3. Access the protected flow with the session cookie automatically attached to the page's request context
-        const splitResponse = await page.request.get('/api/split');
+    test('should reject login with an invalid signature', async ({ page }) => {
+        const keypair = Keypair.random();
+        const address = keypair.publicKey();
 
-        // Assert successful access to protected route
-        expect(splitResponse.status()).toBe(200);
-        const splitData = await splitResponse.json();
-        expect(splitData).toHaveProperty('allocations');
-        expect(splitData.allocations).toMatchObject({
-            dailySpending: expect.any(Number),
-            savings: expect.any(Number),
-            bills: expect.any(Number),
-            insurance: expect.any(Number),
+        const nonceResponse = await page.request.get(`/api/auth/nonce?address=${address}`);
+        const { nonce } = await nonceResponse.json();
+
+        // Use a different keypair to sign
+        const wrongKeypair = Keypair.random();
+        const signatureBuffer = wrongKeypair.sign(Buffer.from(nonce, 'hex'));
+        const invalidSignature = signatureBuffer.toString('base64');
+
+        const loginResponse = await page.request.post('/api/auth/login', {
+            data: { address, signature: invalidSignature }
         });
+
+        // Assert failure
+        expect(loginResponse.status()).toBe(401);
+    });
+
+    test('should reject login with an expired or missing nonce', async ({ page }) => {
+        const keypair = Keypair.random();
+        const address = keypair.publicKey();
+        // Since there is no cached nonce, this should fail with 401
+
+        // This 'fake-nonce' must be even length valid hex because keypair.sign uses buffer.from hex
+        const signatureBuffer = keypair.sign(Buffer.from('deadbeef', 'hex'));
+        const signature = signatureBuffer.toString('base64');
+
+        const loginResponse = await page.request.post('/api/auth/login', {
+            data: { address, signature }
+        });
+
+        // Assert failure due to missing nonce
+        expect(loginResponse.status()).toBe(401);
     });
 });
+

@@ -1,4 +1,5 @@
-import { Server, Networks, Account, TransactionBuilder, Operation, BASE_FEE, StrKey } from '@stellar/stellar-sdk'
+import {  Networks, Account, TransactionBuilder, Operation, BASE_FEE, StrKey } from '@stellar/stellar-sdk'
+import { Server } from '@stellar/stellar-sdk/lib/horizon'
 
 const HORIZON_URL = process.env.HORIZON_URL || 'https://horizon-testnet.stellar.org'
 const NETWORK_PASSPHRASE = process.env.NETWORK_PASSPHRASE || Networks.TESTNET

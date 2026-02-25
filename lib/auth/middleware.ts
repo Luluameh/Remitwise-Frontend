@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
+import {getSession} from "@/lib/session"
 
 export type ActionState = {
   error?: string;
@@ -131,14 +132,23 @@ type NextHandler = (req: NextRequest) => Promise<NextResponse>;
 
 export function withAuth(handler: NextHandler) {
   return async (req: NextRequest) => {
-    const authHeader = req.headers.get("authorization") ?? "";
-    const token = authHeader.startsWith("Bearer ")
-      ? authHeader.slice(7).trim()
-      : null;
+    // const authHeader = req.headers.get("authorization") ?? "";
+    // const token = authHeader.startsWith("Bearer ")
+    //   ? authHeader.slice(7).trim()
+    //   : null;
 
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
+    // if (!token) {
+    //   return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    // }
+
+    const session = await getSession();
+      if (!session?.address) {
+        return NextResponse.json(
+          { error: 'Unauthorized', message: 'Not authenticated' },
+          { status: 401 }
+        );
+      }
+    
     return handler(req);
   };
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Keypair, StrKey } from '@stellar/stellar-sdk';
+import { getNonce, deleteNonce } from '@/lib/auth/nonce-store';
 
 /**
  * POST /api/auth/login
@@ -30,16 +31,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    try {
-      // TODO: Verify nonce exists and hasn't expired
-      // const storedNonce = await getNonce(address);
-      // if (!storedNonce || storedNonce !== message) {
-      //   return NextResponse.json(
-      //     { error: 'Invalid or expired nonce' },
-      //     { status: 401 }
-      //   );
-      // }
+    // Verify nonce exists and hasn't expired
+    const storedNonce = getNonce(address);
+    if (!storedNonce || storedNonce !== message) {
+      return NextResponse.json(
+        { error: 'Invalid or expired nonce' },
+        { status: 401 }
+      );
+    }
 
+    try {
       // Verify the signature
       const keypair = Keypair.fromPublicKey(address);
       const messageBuffer = Buffer.from(message, 'utf8');
@@ -54,10 +55,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Delete used nonce (one-time use)
+      deleteNonce(address);
+
       // TODO: Create session/JWT token
       // const token = await createAuthToken(address);
-      // TODO: Delete used nonce
-      // await deleteNonce(address);
 
       // Return success with mock token
       return NextResponse.json({

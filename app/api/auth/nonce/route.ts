@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
+import { storeNonce } from '@/lib/auth/nonce-store';
 
 /**
  * GET /api/auth/nonce
@@ -30,10 +31,8 @@ export async function GET(request: NextRequest) {
         // Generate a random nonce
         const nonce = randomBytes(32).toString('hex');
 
-        // TODO: Store nonce with expiration (e.g., 5 minutes) in cache/database
-        // For now, just return it
-        // In production:
-        // await storeNonce(address, nonce, { expiresIn: 300 });
+        // Store nonce with 5 minute expiration
+        storeNonce(address, nonce);
 
         return NextResponse.json({
             nonce,

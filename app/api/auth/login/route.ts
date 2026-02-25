@@ -1,21 +1,43 @@
 import { NextResponse } from 'next/server';
+import { Keypair } from '@stellar/stellar-sdk';
+import { getAndClearNonce } from '@/lib/auth-cache';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { address, signature } = body;
 
-    const testWallet = process.env.TEST_WALLET_ADDRESS || 'GDEMOXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
-    const testSignature = process.env.TEST_SIGNATURE || 'mock-signature';
-
-    if (address === testWallet && signature === testSignature) {
-      const response = NextResponse.json({ success: true, token: 'mock-session-token' });
-      // Set a mock session cookie for subsequent protected requests
-      response.cookies.set('session', 'mock-session-cookie', { httpOnly: true, path: '/' });
-      return response;
+    if (!address || !signature) {
+      return NextResponse.json({ error: 'Address and signature are required' }, { status: 400 });
     }
 
-    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+
+
+    // Retrieve and clear nonce
+    const nonce = getAndClearNonce(address);
+    if (!nonce) {
+      return NextResponse.json({ error: 'Nonce expired or missing. Please request a new nonce.' }, { status: 401 });
+    }
+
+    // Verify signature
+    try {
+      const keypair = Keypair.fromPublicKey(address);
+      // Nonce is stored as hex String. Message to verify must match.
+      // Signature is assumed to be base64 from the client.
+      const isValid = keypair.verify(Buffer.from(nonce, 'hex'), Buffer.from(signature, 'base64'));
+
+      if (!isValid) {
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      }
+    } catch (verifError) {
+      return NextResponse.json({ error: 'Signature verification failed' }, { status: 401 });
+    }
+
+    const response = NextResponse.json({ success: true, token: 'mock-session-token' });
+    // Set a mock session cookie for subsequent protected requests
+    response.cookies.set('session', 'mock-session-cookie', { httpOnly: true, path: '/' });
+    return response;
+
   } catch (error) {
     return NextResponse.json({ error: 'Bad Request' }, { status: 400 });
 import { NextRequest } from 'next/server';
@@ -98,3 +120,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

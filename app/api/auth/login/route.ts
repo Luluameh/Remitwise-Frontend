@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     const cookieHeader = getSessionCookieHeader(sealed);
 
     return new Response(
-      JSON.stringify({ success: true, address }),
+      JSON.stringify({ success: true, address, token: sealed }),
       {
         status: 200,
         headers: {

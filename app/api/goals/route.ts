@@ -1,7 +1,21 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { validatePaginationParams, paginateData, PaginatedResult } from '../../../lib/utils/pagination';
+import { buildCreateGoalTx } from '@/lib/contracts/savings-goals';
+import { getSessionFromRequest, getPublicKeyFromSession } from '@/lib/auth/session';
+import {
+  createValidationError,
+  createAuthenticationError,
+  handleUnexpectedError
+} from '@/lib/errors/api-errors';
+import {
+  validateAmount,
+  validateFutureDate,
+  validateGoalName
+} from '@/lib/validation/savings-goals';
+import { ApiSuccessResponse } from '@/lib/types/savings-goals';
 
-// Mock data structure for goals - in a real app this would come from a contract or database
+
+// Mock data structure for goals - replace with DB/contract later
 interface Goal {
   id: string;
   title: string;
@@ -12,7 +26,7 @@ interface Goal {
   updatedAt: string;
 }
 
-// Mock data - in a real app this would come from a contract or database
+// Temporary mock data
 const mockGoals: Goal[] = [
   { id: '1', title: 'Emergency Fund', targetAmount: 10000, currentAmount: 4500, deadline: '2024-12-31', createdAt: '2023-01-15', updatedAt: '2023-06-20' },
   { id: '2', title: 'Vacation Trip', targetAmount: 5000, currentAmount: 1200, deadline: '2024-08-15', createdAt: '2023-03-10', updatedAt: '2023-07-01' },
@@ -24,9 +38,10 @@ const mockGoals: Goal[] = [
   { id: '8', title: 'Business Investment', targetAmount: 30000, currentAmount: 5000, deadline: '2024-11-30', createdAt: '2023-06-01', updatedAt: '2023-12-10' },
 ];
 
+
+// ✅ GET /api/goals → Paginated goals
 export async function GET(request: NextRequest) {
   try {
-    // Extract pagination parameters from query
     const url = new URL(request.url);
     const limitParam = url.searchParams.get('limit');
     const cursorParam = url.searchParams.get('cursor');
@@ -38,8 +53,6 @@ export async function GET(request: NextRequest) {
 
     const { limit, cursor } = validatePaginationParams(paginationParams);
 
-    // In a real implementation, this would fetch from a contract or database
-    // For now, we'll paginate the mock data in memory
     const paginatedResult: PaginatedResult<Goal> = paginateData(
       mockGoals,
       limit,
@@ -47,32 +60,69 @@ export async function GET(request: NextRequest) {
       cursor
     );
 
-    return Response.json(paginatedResult);
+    return NextResponse.json(paginatedResult);
   } catch (error) {
     console.error('Error fetching goals:', error);
-    return Response.json({ error: 'Failed to fetch goals' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch goals' }, { status: 500 });
   }
 }
 
-// POST handler for creating goals (future use)
+
+// ✅ POST /api/goals → Create goal (real implementation)
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    
-    // In a real implementation, this would create a goal via contract or database
-    const newGoal: Goal = {
-      id: Date.now().toString(), // In real app, use proper ID generation
-      title: body.title,
-      targetAmount: body.targetAmount,
-      currentAmount: body.currentAmount || 0,
-      deadline: body.deadline,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    const session = getSessionFromRequest(request);
+    if (!session) {
+      return createAuthenticationError('Authentication required', 'Please provide a valid session');
+    }
 
-    return Response.json(newGoal, { status: 201 });
+    let publicKey: string;
+    try {
+      publicKey = getPublicKeyFromSession(session);
+    } catch {
+      return createAuthenticationError('Invalid session', 'Session does not contain a valid public key');
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return createValidationError('Invalid request body', 'Request body must be valid JSON');
+    }
+
+    const { name, targetAmount, targetDate } = body;
+
+    if (!name) {
+      return createValidationError('Missing required field', 'Goal name is required');
+    }
+    const nameValidation = validateGoalName(name);
+    if (!nameValidation.isValid) {
+      return createValidationError('Invalid goal name', nameValidation.error);
+    }
+
+    if (targetAmount === undefined || targetAmount === null) {
+      return createValidationError('Missing required field', 'Target amount is required');
+    }
+    const amountValidation = validateAmount(targetAmount);
+    if (!amountValidation.isValid) {
+      return createValidationError('Invalid target amount', amountValidation.error);
+    }
+
+    if (!targetDate) {
+      return createValidationError('Missing required field', 'Target date is required');
+    }
+    const dateValidation = validateFutureDate(targetDate);
+    if (!dateValidation.isValid) {
+      return createValidationError('Invalid target date', dateValidation.error);
+    }
+
+    const result = await buildCreateGoalTx(publicKey, name, targetAmount, targetDate);
+
+    const response: ApiSuccessResponse = { xdr: result.xdr };
+
+    return NextResponse.json(response, { status: 200 });
+
   } catch (error) {
-    console.error('Error creating goal:', error);
-    return Response.json({ error: 'Failed to create goal' }, { status: 500 });
+    return handleUnexpectedError(error);
   }
 }

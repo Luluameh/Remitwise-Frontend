@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Keypair, StrKey } from '@stellar/stellar-sdk';
 import { getNonce, deleteNonce } from '@/lib/auth/nonce-store';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * POST /api/auth/login
  * Verify a signature and authenticate user

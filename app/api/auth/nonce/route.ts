@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
 import { storeNonce } from '@/lib/auth/nonce-store';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * GET /api/auth/nonce
  * Generate a nonce for signature-based authentication

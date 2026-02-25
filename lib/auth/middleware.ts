@@ -1,10 +1,10 @@
-import { z } from 'zod';
+import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 
 export type ActionState = {
   error?: string;
   success?: string;
-  validationErrors?: {path: string, message: string}[]
+  validationErrors?: { path: string; message: string }[];
   [key: string]: any; // This allows for additional properties
 };
 
@@ -28,16 +28,14 @@ export type ActionState = {
 //   };
 // }
 
-
-
 type RouteHandler<S extends z.ZodType<any, any>> = (
   req: NextRequest,
-  data: z.infer<S>
+  data: z.infer<S>,
 ) => Promise<NextResponse>;
 
 export function validatedRoute<S extends z.ZodType<any, any>>(
   schema: S,
-  handler: RouteHandler<S>
+  handler: RouteHandler<S>,
 ) {
   return async (req: NextRequest) => {
     const contentType = req.headers.get("content-type") || "";
@@ -47,7 +45,7 @@ export function validatedRoute<S extends z.ZodType<any, any>>(
       : Object.fromEntries(await req.formData());
 
     const result = schema.safeParse(raw);
-    console.log(result, 'result')
+    console.log(result, "result");
 
     if (!result.success) {
       return NextResponse.json(
@@ -58,7 +56,7 @@ export function validatedRoute<S extends z.ZodType<any, any>>(
           })),
           // ...(result.data ? { fields: result.data })
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -66,22 +64,26 @@ export function validatedRoute<S extends z.ZodType<any, any>>(
   };
 }
 
-
 type NextHandler = (req: NextRequest) => Promise<NextResponse>;
-
 
 export function withAuth(handler: NextHandler) {
   return async (req: NextRequest) => {
-    const session = ()=> "sessionToken"; // your session logic
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const authHeader = req.headers.get("authorization") ?? "";
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.slice(7).trim()
+      : null;
+
+    if (!token) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
     return handler(req);
   };
 }
 
 // compose multiple middlewares left to right
-export function compose(...middlewares: Array<(h: NextHandler) => NextHandler>) {
+export function compose(
+  ...middlewares: Array<(h: NextHandler) => NextHandler>
+) {
   return (handler: NextHandler): NextHandler =>
     middlewares.reduceRight((acc, mw) => mw(acc), handler);
 }

@@ -6,6 +6,18 @@ import {
   getSessionCookieHeader,
 } from '@/lib/session';
 
+
+export const dynamic = 'force-dynamic';
+
+/**
+ * Wallet-based auth flow:
+ * 1. Frontend: user connects wallet (e.g. Freighter), gets address.
+ * 2. Frontend: build a nonce message (e.g. "Sign in to Remitwise at {timestamp}").
+ * 3. Frontend: sign message with wallet
+ * 4. Frontend: POST /api/auth/login with { address, signature }
+ * 5. Backend: verify with Keypair using stored server memory nonce; create encrypted session cookie.
+ */
+
 export const dynamic = 'force-dynamic';
 
 /**

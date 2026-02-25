@@ -1,9 +1,10 @@
+import { clearSessionCookie } from '@/lib/session';
+
 export const dynamic = 'force-dynamic';
 
 export async function POST() {
-  const cookieHeader =
-    'remitwise_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0';
-  return new Response(JSON.stringify({ ok: true }), {
+  const cookieHeader = clearSessionCookie();
+  return new Response(JSON.stringify({ ok: true, message: 'Logged out successfully' }), {
     status: 200,
     headers: {
       'Content-Type': 'application/json',

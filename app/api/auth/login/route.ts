@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Keypair } from '@stellar/stellar-sdk';
 import { getAndClearNonce } from '@/lib/auth-cache';
+<<<<<<< HEAD
 import {
   createSession,
   getSessionCookieHeader,
@@ -17,6 +18,10 @@ export const dynamic = 'force-dynamic';
  * 5. Backend: verify signature with Keypair; create encrypted session cookie.
  */
 export async function POST(request: NextRequest) {
+=======
+
+export async function POST(request: Request) {
+>>>>>>> ca390a2c4af7fe8c1e6febe454cd3d1f5ef6c9b3
   try {
     const body = await request.json();
     const { address, signature } = body;
@@ -28,7 +33,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+<<<<<<< HEAD
     // Retrieve and clear nonce
+=======
+    // Retrieve and clear nonce — returns null if missing or expired
+>>>>>>> ca390a2c4af7fe8c1e6febe454cd3d1f5ef6c9b3
     const nonce = getAndClearNonce(address);
     if (!nonce) {
       return NextResponse.json(
@@ -40,7 +49,11 @@ export async function POST(request: NextRequest) {
     // Verify signature
     try {
       const keypair = Keypair.fromPublicKey(address);
+<<<<<<< HEAD
       // Nonce is stored as hex string. Message to verify must match.
+=======
+      // Nonce is stored as hex string; signature is base64 from the client.
+>>>>>>> ca390a2c4af7fe8c1e6febe454cd3d1f5ef6c9b3
       const isValid = keypair.verify(
         Buffer.from(nonce, 'hex'),
         Buffer.from(signature, 'base64')
@@ -49,17 +62,23 @@ export async function POST(request: NextRequest) {
       if (!isValid) {
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
       }
+<<<<<<< HEAD
     } catch (verifError) {
       console.error('Verification error:', verifError);
+=======
+    } catch {
+>>>>>>> ca390a2c4af7fe8c1e6febe454cd3d1f5ef6c9b3
       return NextResponse.json(
         { error: 'Signature verification failed' },
         { status: 401 }
       );
     }
 
-    const sealed = await createSession(address);
-    const cookieHeader = getSessionCookieHeader(sealed);
+    const response = NextResponse.json({ success: true, token: 'mock-session-token' });
+    response.cookies.set('session', 'mock-session-cookie', { httpOnly: true, path: '/' });
+    return response;
 
+<<<<<<< HEAD
     return new Response(
       JSON.stringify({ success: true, address }),
       {
@@ -78,3 +97,9 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+=======
+  } catch {
+    return NextResponse.json({ error: 'Bad Request' }, { status: 400 });
+  }
+}
+>>>>>>> ca390a2c4af7fe8c1e6febe454cd3d1f5ef6c9b3

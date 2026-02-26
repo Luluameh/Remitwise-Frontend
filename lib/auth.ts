@@ -1,4 +1,18 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "./session";
+
+/**
+ * Structured API error for consistent error responses.
+ */
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
 
 /**
  * Validates the Authorization header.
@@ -20,4 +34,24 @@ export function unauthorizedResponse() {
     status: 401,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+import { NextResponse } from "next/server";
+import { getSession } from "@/lib/session";
+
+type NextHandler = (req: NextRequest, address: string) => Promise<NextResponse>;
+
+export function withAuth(handler: NextHandler) {
+  return async (req: NextRequest) => {
+
+    const session = await getSession();
+    if (!session?.address) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
+    return handler(req, session.address);
+  };
 }
